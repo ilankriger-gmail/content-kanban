@@ -212,9 +212,11 @@
         }
         
         .column[data-status="ideias"] .dot { background: var(--yellow); }
+        .column[data-status="selecionadas"] .dot { background: var(--accent); }
         .column[data-status="producao"] .dot { background: var(--danger); }
-        .column[data-status="aprovacao"] .dot { background: var(--blue); }
         .column[data-status="publicado"] .dot { background: var(--success); }
+        
+        .stat-icon.purple { background: rgba(139, 92, 246, 0.15); }
         
         .column-header h2 {
             font-size: 16px;
@@ -563,15 +565,15 @@
                 Ideias
                 <span class="count" id="nav-ideias">0</span>
             </div>
+            <div class="nav-item" data-filter="selecionadas">
+                <span class="icon">⭐</span>
+                Selecionadas
+                <span class="count" id="nav-selecionadas">0</span>
+            </div>
             <div class="nav-item" data-filter="producao">
                 <span class="icon">🎬</span>
                 Produção
                 <span class="count" id="nav-producao">0</span>
-            </div>
-            <div class="nav-item" data-filter="aprovacao">
-                <span class="icon">👀</span>
-                Aprovação
-                <span class="count" id="nav-aprovacao">0</span>
             </div>
             <div class="nav-item" data-filter="publicado">
                 <span class="icon">✅</span>
@@ -624,17 +626,17 @@
                 </div>
             </div>
             <div class="stat">
+                <div class="stat-icon purple">⭐</div>
+                <div class="stat-info">
+                    <span class="stat-value" id="stat-selecionadas">0</span>
+                    <span class="stat-label">Selecionadas</span>
+                </div>
+            </div>
+            <div class="stat">
                 <div class="stat-icon red">🎬</div>
                 <div class="stat-info">
                     <span class="stat-value" id="stat-producao">0</span>
                     <span class="stat-label">Em Produção</span>
-                </div>
-            </div>
-            <div class="stat">
-                <div class="stat-icon blue">👀</div>
-                <div class="stat-info">
-                    <span class="stat-value" id="stat-aprovacao">0</span>
-                    <span class="stat-label">Aguardando</span>
                 </div>
             </div>
             <div class="stat">
@@ -656,6 +658,15 @@
                 <div class="cards" id="cards-ideias"></div>
             </div>
             
+            <div class="column" data-status="selecionadas">
+                <div class="column-header">
+                    <div class="dot"></div>
+                    <h2>Selecionadas</h2>
+                    <span class="count" id="count-selecionadas">0</span>
+                </div>
+                <div class="cards" id="cards-selecionadas"></div>
+            </div>
+            
             <div class="column" data-status="producao">
                 <div class="column-header">
                     <div class="dot"></div>
@@ -663,15 +674,6 @@
                     <span class="count" id="count-producao">0</span>
                 </div>
                 <div class="cards" id="cards-producao"></div>
-            </div>
-            
-            <div class="column" data-status="aprovacao">
-                <div class="column-header">
-                    <div class="dot"></div>
-                    <h2>Aprovação</h2>
-                    <span class="count" id="count-aprovacao">0</span>
-                </div>
-                <div class="cards" id="cards-aprovacao"></div>
             </div>
             
             <div class="column" data-status="publicado">
@@ -719,7 +721,7 @@
     
     <script>
         const STORAGE_KEY = 'content-kanban-data';
-        const STATUSES = ['ideias', 'producao', 'aprovacao', 'publicado'];
+        const STATUSES = ['ideias', 'selecionadas', 'producao', 'publicado'];
         
         function loadData() {
             const data = localStorage.getItem(STORAGE_KEY);
@@ -777,13 +779,21 @@
                     status: 'producao',
                     created: '2026-02-15'
                 },
-                // APROVAÇÃO
+                // SELECIONADAS
                 {
                     id: '30',
                     title: 'Criei uma IA que analisa seus vídeos',
                     desc: 'Post sobre o Viral Finder. CTA: crie sua conta grátis',
                     platform: 'threads',
-                    status: 'aprovacao',
+                    status: 'selecionadas',
+                    created: '2026-02-15'
+                },
+                {
+                    id: '31',
+                    title: 'R$50 por cada país que você souber a capital',
+                    desc: 'Quiz de geografia na rua. Já escolhi o local de gravação',
+                    platform: 'tiktok',
+                    status: 'selecionadas',
                     created: '2026-02-15'
                 },
                 // PUBLICADO
