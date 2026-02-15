@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Kanban</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-dark: #0f0f0f;
+            --bg-main: #151515;
+            --bg-card: #1c1c1c;
+            --bg-hover: #232323;
+            --border: #2a2a2a;
+            --text: #e4e4e4;
+            --text-secondary: #888;
+            --text-muted: #555;
+            --accent: #8b5cf6;
+            --accent-hover: #a78bfa;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --yellow: #facc15;
+            --blue: #3b82f6;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-main);
+            min-height: 100vh;
+            color: var(--text);
+            display: flex;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background: var(--bg-dark);
+            border-right: 1px solid var(--border);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .logo {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 32px;
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo span {
+            font-size: 24px;
+        }
+        
+        .nav-section {
+            margin-bottom: 24px;
+        }
+        
+        .nav-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            padding: 0 12px;
+            margin-bottom: 12px;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 15px;
+            color: var(--text-secondary);
+        }
+        
+        .nav-item:hover {
+            background: var(--bg-hover);
+            color: var(--text);
+        }
+        
+        .nav-item.active {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .nav-item .icon {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .nav-item .count {
+            margin-left: auto;
+            background: var(--bg-card);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        
+        .nav-item.active .count {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        
+        /* Main Content */
+        .main {
+            margin-left: 240px;
+            flex: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-dark);
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            background: var(--bg-hover);
+        }
+        
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+        
+        /* Kanban Board */
+        .kanban {
+            display: flex;
+            gap: 20px;
+            padding: 32px;
+            flex: 1;
+            overflow-x: auto;
+        }
+        
+        .column {
+            min-width: 340px;
+            max-width: 340px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .column-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 0;
+            margin-bottom: 12px;
+        }
+        
+        .column-header .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .column[data-status="ideias"] .dot { background: var(--yellow); }
+        .column[data-status="producao"] .dot { background: var(--danger); }
+        .column[data-status="aprovacao"] .dot { background: var(--blue); }
+        .column[data-status="publicado"] .dot { background: var(--success); }
+        
+        .column-header h2 {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text);
+        }
+        
+        .column-header .count {
+            background: var(--bg-card);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-left: auto;
+        }
+        
+        /* Cards */
+        .cards {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        
+        .card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            line-height: 1.5;
+            color: var(--text);
+        }
+        
+        .card-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+        
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .platform-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+        }
+        
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .card-btn {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+            background: transparent;
+            color: var(--text-secondary);
+        }
+        
+        .card-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text);
+            border-color: var(--text-muted);
+        }
+        
+        .card-btn.forward {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+        
+        .card-btn.forward:hover {
+            background: var(--accent-hover);
+        }
+        
+        .card-btn.delete {
+            flex: 0 0 44px;
+            color: var(--danger);
+        }
+        
+        .card-btn.delete:hover {
+            background: var(--danger);
+            border-color: var(--danger);
+            color: white;
+        }
+        
+        /* Empty state */
+        .empty {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+            font-size: 14px;
+            background: var(--bg-card);
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal h2 {
+            margin-bottom: 28px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-main);
+            color: var(--text);
+            font-size: 15px;
+            transition: border-color 0.15s;
+            font-family: inherit;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        .form-group textarea {
+            min-height: 140px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 32px;
+        }
+        
+        .modal-actions button {
+            flex: 1;
+            padding: 14px 20px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.15s;
+        }
+        
+        .btn-cancel {
+            background: transparent;
+            color: var(--text-secondary);
+        }
+        
+        .btn-cancel:hover {
+            background: var(--bg-hover);
+            color: var(--text);
+        }
+        
+        .btn-save {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+        
+        .btn-save:hover {
+            background: var(--accent-hover);
+        }
+        
+        /* Stats bar */
+        .stats-bar {
+            display: flex;
+            gap: 24px;
+            padding: 20px 32px;
+            background: var(--bg-dark);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .stat-icon.yellow { background: rgba(250, 204, 21, 0.15); }
+        .stat-icon.red { background: rgba(239, 68, 68, 0.15); }
+        .stat-icon.blue { background: rgba(59, 130, 246, 0.15); }
+        .stat-icon.green { background: rgba(34, 197, 94, 0.15); }
+        
+        .stat-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        
+        /* Responsive */
+        @media (max-width: 900px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .main {
+                margin-left: 0;
+            }
+            
+            .stats-bar {
+                display: none;
+            }
+            
+            .kanban {
+                padding: 20px;
+                gap: 16px;
+            }
+            
+            .column {
+                min-width: 85vw;
+                max-width: 85vw;
+                scroll-snap-align: center;
+            }
+            
+            .kanban {
+                scroll-snap-type: x mandatory;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo">
+            <span>📋</span>
+            Content Kanban
+        </div>
+        
+        <nav class="nav-section">
+            <div class="nav-title">Workflow</div>
+            <div class="nav-item active" data-filter="all">
+                <span class="icon">🎯</span>
+                Todos
+                <span class="count" id="total-count">0</span>
+            </div>
+            <div class="nav-item" data-filter="ideias">
+                <span class="icon">💡</span>
+                Ideias
+                <span class="count" id="nav-ideias">0</span>
+            </div>
+            <div class="nav-item" data-filter="producao">
+                <span class="icon">🎬</span>
+                Produção
+                <span class="count" id="nav-producao">0</span>
+            </div>
+            <div class="nav-item" data-filter="aprovacao">
+                <span class="icon">👀</span>
+                Aprovação
+                <span class="count" id="nav-aprovacao">0</span>
+            </div>
+            <div class="nav-item" data-filter="publicado">
+                <span class="icon">✅</span>
+                Publicado
+                <span class="count" id="nav-publicado">0</span>
+            </div>
+        </nav>
+        
+        <nav class="nav-section">
+            <div class="nav-title">Plataformas</div>
+            <div class="nav-item" data-platform="tiktok">
+                <span class="icon">📱</span>
+                TikTok
+            </div>
+            <div class="nav-item" data-platform="threads">
+                <span class="icon">🧵</span>
+                Threads
+            </div>
+            <div class="nav-item" data-platform="twitter">
+                <span class="icon">𝕏</span>
+                Twitter
+            </div>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="nav-item" onclick="openModal()">
+                <span class="icon">➕</span>
+                Nova Ideia
+            </div>
+        </div>
+    </aside>
+    
+    <main class="main">
+        <header class="header">
+            <h1>Content Pipeline</h1>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openModal()">
+                    <span>➕</span>
+                    Nova Ideia
+                </button>
+            </div>
+        </header>
+        
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-icon yellow">💡</div>
+                <div class="stat-info">
+                    <span class="stat-value" id="stat-ideias">0</span>
+                    <span class="stat-label">Ideias</span>
+                </div>
+            </div>
+            <div class="stat">
+                <div class="stat-icon red">🎬</div>
+                <div class="stat-info">
+                    <span class="stat-value" id="stat-producao">0</span>
+                    <span class="stat-label">Em Produção</span>
+                </div>
+            </div>
+            <div class="stat">
+                <div class="stat-icon blue">👀</div>
+                <div class="stat-info">
+                    <span class="stat-value" id="stat-aprovacao">0</span>
+                    <span class="stat-label">Aguardando</span>
+                </div>
+            </div>
+            <div class="stat">
+                <div class="stat-icon green">✅</div>
+                <div class="stat-info">
+                    <span class="stat-value" id="stat-publicado">0</span>
+                    <span class="stat-label">Publicados</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="kanban">
+            <div class="column" data-status="ideias">
+                <div class="column-header">
+                    <div class="dot"></div>
+                    <h2>Ideias</h2>
+                    <span class="count" id="count-ideias">0</span>
+                </div>
+                <div class="cards" id="cards-ideias"></div>
+            </div>
+            
+            <div class="column" data-status="producao">
+                <div class="column-header">
+                    <div class="dot"></div>
+                    <h2>Produção</h2>
+                    <span class="count" id="count-producao">0</span>
+                </div>
+                <div class="cards" id="cards-producao"></div>
+            </div>
+            
+            <div class="column" data-status="aprovacao">
+                <div class="column-header">
+                    <div class="dot"></div>
+                    <h2>Aprovação</h2>
+                    <span class="count" id="count-aprovacao">0</span>
+                </div>
+                <div class="cards" id="cards-aprovacao"></div>
+            </div>
+            
+            <div class="column" data-status="publicado">
+                <div class="column-header">
+                    <div class="dot"></div>
+                    <h2>Publicado</h2>
+                    <span class="count" id="count-publicado">0</span>
+                </div>
+                <div class="cards" id="cards-publicado"></div>
+            </div>
+        </div>
+    </main>
+    
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2 id="modal-title">Nova Ideia</h2>
+            <input type="hidden" id="card-id">
+            
+            <div class="form-group">
+                <label>Título</label>
+                <input type="text" id="card-title" placeholder="Ex: VidIQ vs Viral Finder">
+            </div>
+            
+            <div class="form-group">
+                <label>Descrição</label>
+                <textarea id="card-desc" placeholder="Detalhes, roteiro, notas..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Plataforma</label>
+                <select id="card-platform">
+                    <option value="all">Todas</option>
+                    <option value="tiktok">TikTok</option>
+                    <option value="threads">Threads</option>
+                    <option value="twitter">Twitter</option>
+                </select>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+                <button class="btn-save" onclick="saveCard()">Salvar</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const STORAGE_KEY = 'content-kanban-data';
+        const STATUSES = ['ideias', 'producao', 'aprovacao', 'publicado'];
+        
+        function loadData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (data) {
+                return JSON.parse(data);
+            }
+            return [
+                {
+                    id: '1',
+                    title: 'VidIQ vs Viral Finder — Quem me ajudou mais?',
+                    desc: 'Comparativo entre as ferramentas de análise',
+                    platform: 'tiktok',
+                    status: 'publicado',
+                    created: '2026-02-15'
+                },
+                {
+                    id: '2',
+                    title: 'IA deu nota 65 vs 94 — A diferença?',
+                    desc: 'Vídeo do pai vs meu vídeo',
+                    platform: 'tiktok',
+                    status: 'publicado',
+                    created: '2026-02-15'
+                },
+                {
+                    id: '3',
+                    title: 'Editor 5B views vs IA — Quem acertou?',
+                    desc: 'Comparativo editor humano vs inteligência artificial',
+                    platform: 'tiktok',
+                    status: 'publicado',
+                    created: '2026-02-15'
+                }
+            ];
+        }
+        
+        function saveData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+        
+        let cards = loadData();
+        
+        function render() {
+            let total = 0;
+            
+            STATUSES.forEach(status => {
+                const container = document.getElementById(`cards-${status}`);
+                const statusCards = cards.filter(c => c.status === status);
+                const count = statusCards.length;
+                total += count;
+                
+                document.getElementById(`count-${status}`).textContent = count;
+                document.getElementById(`nav-${status}`).textContent = count;
+                document.getElementById(`stat-${status}`).textContent = count;
+                
+                if (count === 0) {
+                    container.innerHTML = '<div class="empty">Nenhum conteúdo aqui</div>';
+                    return;
+                }
+                
+                container.innerHTML = statusCards.map(card => {
+                    const statusIndex = STATUSES.indexOf(card.status);
+                    const canGoBack = statusIndex > 0;
+                    const canGoForward = statusIndex < STATUSES.length - 1;
+                    
+                    const platformIcon = {
+                        'tiktok': '📱',
+                        'threads': '🧵',
+                        'twitter': '𝕏',
+                        'all': '🌐'
+                    }[card.platform] || '📱';
+                    
+                    return `
+                        <div class="card" onclick="editCard('${card.id}')">
+                            <div class="card-title">${card.title}</div>
+                            ${card.desc ? `<div class="card-desc">${card.desc}</div>` : ''}
+                            <div class="card-meta">
+                                <span class="platform-tag">${platformIcon} ${card.platform}</span>
+                                <span>${card.created}</span>
+                            </div>
+                            <div class="card-actions" onclick="event.stopPropagation()">
+                                ${canGoBack ? `<button class="card-btn" onclick="moveCard('${card.id}', -1)">← Voltar</button>` : ''}
+                                ${canGoForward ? `<button class="card-btn forward" onclick="moveCard('${card.id}', 1)">Avançar →</button>` : ''}
+                                <button class="card-btn delete" onclick="deleteCard('${card.id}')">✕</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            });
+            
+            document.getElementById('total-count').textContent = total;
+        }
+        
+        function openModal(cardId = null) {
+            document.getElementById('modal').classList.add('active');
+            if (cardId) {
+                const card = cards.find(c => c.id === cardId);
+                document.getElementById('modal-title').textContent = 'Editar';
+                document.getElementById('card-id').value = card.id;
+                document.getElementById('card-title').value = card.title;
+                document.getElementById('card-desc').value = card.desc || '';
+                document.getElementById('card-platform').value = card.platform;
+            } else {
+                document.getElementById('modal-title').textContent = 'Nova Ideia';
+                document.getElementById('card-id').value = '';
+                document.getElementById('card-title').value = '';
+                document.getElementById('card-desc').value = '';
+                document.getElementById('card-platform').value = 'all';
+            }
+            document.getElementById('card-title').focus();
+        }
+        
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+        
+        function editCard(id) {
+            openModal(id);
+        }
+        
+        function saveCard() {
+            const id = document.getElementById('card-id').value;
+            const title = document.getElementById('card-title').value.trim();
+            const desc = document.getElementById('card-desc').value.trim();
+            const platform = document.getElementById('card-platform').value;
+            
+            if (!title) {
+                document.getElementById('card-title').focus();
+                return;
+            }
+            
+            if (id) {
+                const card = cards.find(c => c.id === id);
+                card.title = title;
+                card.desc = desc;
+                card.platform = platform;
+            } else {
+                cards.unshift({
+                    id: Date.now().toString(),
+                    title,
+                    desc,
+                    platform,
+                    status: 'ideias',
+                    created: new Date().toISOString().split('T')[0]
+                });
+            }
+            
+            saveData(cards);
+            render();
+            closeModal();
+        }
+        
+        function moveCard(id, direction) {
+            const card = cards.find(c => c.id === id);
+            const currentIndex = STATUSES.indexOf(card.status);
+            const newIndex = currentIndex + direction;
+            
+            if (newIndex >= 0 && newIndex < STATUSES.length) {
+                card.status = STATUSES[newIndex];
+                saveData(cards);
+                render();
+            }
+        }
+        
+        function deleteCard(id) {
+            if (confirm('Deletar este conteúdo?')) {
+                cards = cards.filter(c => c.id !== id);
+                saveData(cards);
+                render();
+            }
+        }
+        
+        // Close modal on outside click
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') closeModal();
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+            if (e.key === 'n' && !document.querySelector('.modal.active')) {
+                e.preventDefault();
+                openModal();
+            }
+        });
+        
+        // Initial render
+        render();
+    </script>
+</body>
+</html>
