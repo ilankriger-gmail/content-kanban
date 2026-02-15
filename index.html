@@ -333,13 +333,13 @@
     <script>
         const SUPABASE_URL = 'https://gsxanzgwstlpfvnqcmiu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzeGFuemd3c3RscGZ2bnFjbWl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2NjYyMDIsImV4cCI6MjA4MzI0MjIwMn0.OapNhZJbbeH0eEJWIU_zg4ihEvtxSC9rAG-dLBQCmvE';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
         const STATUSES = ['ideias', 'selecionadas', 'producao', 'publicado'];
         let cards = [];
         
         async function loadCards() {
-            const { data, error } = await supabase
+            const { data, error } = await db
                 .from('viral_content')
                 .select('*')
                 .order('created_at', { ascending: false });
@@ -421,9 +421,9 @@
             if (!title) return;
             
             if (id) {
-                await supabase.from('viral_content').update({ title, description, platform, updated_at: new Date().toISOString() }).eq('id', id);
+                await db.from('viral_content').update({ title, description, platform, updated_at: new Date().toISOString() }).eq('id', id);
             } else {
-                await supabase.from('viral_content').insert([{ title, description, platform, status: 'ideias' }]);
+                await db.from('viral_content').insert([{ title, description, platform, status: 'ideias' }]);
             }
             
             closeModal();
@@ -434,14 +434,14 @@
             const card = cards.find(c => c.id === id);
             const newIdx = STATUSES.indexOf(card.status) + direction;
             if (newIdx >= 0 && newIdx < STATUSES.length) {
-                await supabase.from('viral_content').update({ status: STATUSES[newIdx], updated_at: new Date().toISOString() }).eq('id', id);
+                await db.from('viral_content').update({ status: STATUSES[newIdx], updated_at: new Date().toISOString() }).eq('id', id);
                 loadCards();
             }
         }
         
         async function deleteCard(id) {
             if (confirm('Deletar?')) {
-                await supabase.from('viral_content').delete().eq('id', id);
+                await db.from('viral_content').delete().eq('id', id);
                 loadCards();
             }
         }
