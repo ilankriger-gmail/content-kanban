@@ -151,6 +151,11 @@
         
         .card-title { font-size: 16px; font-weight: 500; margin-bottom: 10px; line-height: 1.5; }
         .card-desc { font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6; }
+        .card-slides { display: flex; gap: 6px; margin: 12px 0; overflow-x: auto; padding-bottom: 8px; }
+        .card-slides img { width: 60px; height: 80px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 2px solid var(--border); transition: all 0.2s; }
+        .card-slides img:hover { border-color: var(--primary); transform: scale(1.05); }
+        .slides-count { font-size: 12px; color: var(--primary); margin-bottom: 12px; }
+        .card.has-slides { border-color: var(--primary); }
         
         .card-meta {
             display: flex;
@@ -372,10 +377,19 @@
                     const canForward = idx < STATUSES.length - 1;
                     const icon = { tiktok: '📱', threads: '🧵', twitter: '𝕏', all: '🌐' }[card.platform] || '📱';
                     
+                    const hasSlides = card.slides && card.slides.length > 0;
+                    const slidesHtml = hasSlides ? `
+                        <div class="card-slides" onclick="event.stopPropagation()">
+                            ${card.slides.map((url, i) => `<img src="${url}" alt="Slide ${i+1}" onclick="window.open('${url}', '_blank')">`).join('')}
+                        </div>
+                        <div class="slides-count">📸 ${card.slides.length} slides</div>
+                    ` : '';
+                    
                     return `
-                        <div class="card" onclick="editCard('${card.id}')">
+                        <div class="card ${hasSlides ? 'has-slides' : ''}" onclick="editCard('${card.id}')">
                             <div class="card-title">${card.title}</div>
                             ${card.description ? `<div class="card-desc">${card.description}</div>` : ''}
+                            ${slidesHtml}
                             <div class="card-meta">
                                 <span class="platform-tag">${icon} ${card.platform}</span>
                                 <span>${new Date(card.created_at).toLocaleDateString('pt-BR')}</span>
